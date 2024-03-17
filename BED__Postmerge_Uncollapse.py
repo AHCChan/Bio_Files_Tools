@@ -36,7 +36,7 @@ This program will also produce a summary file, which will have:
 
 USAGE:
     
-    python27 BED__Postmerge_Uncollapse.py <input_path>
+    python27 BED__Postmerge_Uncollapse.py <input_path> <max_ID_number>
             [-a <output_path_all>] [-s <output_path_summary>]
 
 
@@ -46,6 +46,10 @@ MANDATORY:
     input_file
         
         The filepath of the input BED file. No headers allowed.
+    
+    max_ID_number
+        
+        The highest number which might be found in the rightmost column.
 
 OPTIONAL:
     
@@ -67,13 +71,13 @@ OPTIONAL:
 
 EXAMPLE:
     
-    python27 BED__Postmerge_Uncollapse.py data\merged_sorted_concat_added.bed -c
-            data\uncollapsed__COMPLETE.bed -s data\uncollapsed__SUMMARY.bed
+    python27 BED__Postmerge_Uncollapse.py data\merged_sorted_concat_added.bed 3
+            -c data\uncollapsed__COMPLETE.bed -s data\uncollapsed__SUMMARY.bed
 
 USAGE:
     
-    python27 BED__Postmerge_Uncollapse.py <input_path>
-            [-a <output_path_complete>] [-s <output_path_summary>]
+    python27 BED__Postmerge_Uncollapse.py <input_path> <max_ID_number>
+            [-a <output_path_all>] [-s <output_path_summary>]
 """
 
 NAME = "BED__Postmerge_Uncollapse.py"
@@ -116,11 +120,17 @@ STR__use_help = "\nUse the -h option for help:\n\t python "\
 
 
 
+STR__invalid_max_index = """
+ERROR: Invalid max index: {s}
+Please specify a positive integer.
+"""
+
 STR__invalid_ID = """
-ERROR: Invalid file ID: {S}
+ERROR: Invalid file ID: {s}
 Please ensure that before concatenation and BEDTools Merge, all files have ID
 numbers inserted into the last row. The first file should have an ID number of 1
-and the following files should increment by 1."""
+and the following files should increment by 1.
+"""
 
 
 
@@ -144,13 +154,17 @@ PRINT.PRINT_METRICS = PRINT_METRICS
 
 # Functions ####################################################################
 
-def Uncollapse_BED(path_in, path_out_all, path_out_summary):
+def Uncollapse_BED(path_in, max_index, path_out_all, path_out_summary):
     """
     Generate a series of FASTA files each containing a synthetic chromosome.
     
     @path_in
             (str - filepath)
             The filepath of the input file.
+    @max_index
+            (int)
+            The highest index number found in the rightmost column of the merged
+            file.
     @path_out_all
             (str - dirpath)
             The filepath of the output file containing all the original data.
@@ -184,7 +198,7 @@ def Uncollapse_BED(path_in, path_out_all, path_out_summary):
     column_count = len(first[3:-1])
     cc_range = range(column_count)
     placeholder = column_count * "\t"
-    indexes = range(1, column_count+1)
+    indexes = range(1, max_index+1)
     empty_dict = {}
     for i in indexes: empty_dict[i] = None
     count_dict = {}
@@ -215,7 +229,7 @@ def Uncollapse_BED(path_in, path_out_all, path_out_summary):
                 f.Close()
                 o1.close()
                 o2.close()
-                PRINT.printE(STR__invalid_ID.format(S=data_split[-1][i]))
+                PRINT.printE(STR__invalid_ID.format(s=data_split[-1][i]))
                 return 1
             if dict_[ID]:
                 for j in cc_range:
@@ -277,8 +291,8 @@ def Parse_Command_Line_Input__Uncollapse_BED(raw_command_line_input):
         print(HELP_DOC)
         return 0
     
-    # Initial validation (Redundant in current version)
-    if len(inputs) < 1:
+    # Initial validation
+    if len(inputs) < 2:
         PRINT.printE(STR__insufficient_inputs)
         PRINT.printE(STR__use_help)
         return 1
@@ -290,6 +304,13 @@ def Parse_Command_Line_Input__Uncollapse_BED(raw_command_line_input):
         PRINT.printE(STR__IO_error_read.format(f = path_in))
         PRINT.printE(STR__use_help)
         return 1
+    max_index = inputs.pop(0)
+    valid = Validate_Int_Positive(max_index)
+    if valid == -1:
+        PRINT.printE(STR__invalid_max_index.format(s = max_index))
+        PRINT.printE(STR__use_help)
+        return 1
+    max_index = valid
     
     # Set up rest of the parsing
     path_out_a = Generate_Default_Output_File_Path_From_File(path_in,
@@ -337,7 +358,7 @@ def Parse_Command_Line_Input__Uncollapse_BED(raw_command_line_input):
         return 1
     
     # Run program
-    exit_state = Uncollapse_BED(path_in, path_out_a, path_out_s)
+    exit_state = Uncollapse_BED(path_in, max_index, path_out_a, path_out_s)
     
     # Exit
     if exit_state == 0: return 0
