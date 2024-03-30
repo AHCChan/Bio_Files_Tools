@@ -99,8 +99,8 @@ PRINT_METRICS = True
 
 # Minor Configurations #########################################################
 
-FILEMOD__ALL =   "__UNPACKED_ALL"
-FILEMOD__SUMMARY =   "__UNPACKED_SUMMARY"
+FILEMOD__ALL = "__UNPACKED_ALL"
+FILEMOD__SUMMARY = "__UNPACKED_SUMMARY"
 
 
 
