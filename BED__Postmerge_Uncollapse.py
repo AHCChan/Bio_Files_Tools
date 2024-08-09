@@ -43,7 +43,7 @@ USAGE:
 
 MANDATORY:
     
-    input_file
+    input_path
         
         The filepath of the input BED file. No headers allowed.
     
