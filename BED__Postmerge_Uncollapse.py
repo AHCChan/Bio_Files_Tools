@@ -273,8 +273,8 @@ def Uncollapse_BED(path_in, max_index, path_out_all, path_out_summary):
 
 def Parse_Command_Line_Input__Uncollapse_BED(raw_command_line_input):
     """
-    Parse the command line input and call the Generate_Synthetic_Genome function
-    with appropriate arguments if the command line input is valid.
+    Parse the command line input and call the Uncollapse_BED function with
+    appropriate arguments if the command line input is valid.
     """
     PRINT.printP(STR__parsing_args)
     # Remove the runtime environment variable and program name from the inputs
