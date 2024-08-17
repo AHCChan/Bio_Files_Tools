@@ -262,6 +262,7 @@ def Get_Displacements(path_sizes):
     Get_Displacements(str) -> dict<str:int>
     """
     result = {}
+    current_displacement = 0
     f = open(path_sizes)
     for line in f:
         values = f.split("\t")
@@ -279,7 +280,8 @@ def Get_Displacements(path_sizes):
             except:
                 PRINT.printE(STR__invalid_size_str.format(s = size_str))
                 return {}
-            result[chr_] = size
+            result[chr_] = current_displacement
+            current_displacement += size
     return result
 
 
