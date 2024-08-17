@@ -175,7 +175,7 @@ def Uncollapse_BED(path_in, max_index, path_out_all, path_out_summary):
     Return a value of 0 if the function runs successfully.
     Return a value of 1 if there is a problem.
     
-    Uncollapse_BED(str, str, str) -> int
+    Uncollapse_BED(str, str, str, str) -> int
     """
     # Setup reporting
     row_count = 0
