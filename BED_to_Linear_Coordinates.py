@@ -119,7 +119,7 @@ STR__use_help = "\nUse the -h option for help:\n\t python "\
 
 
 
-STR__no_size_str.format = """
+STR__no_size_str = """
 ERROR: No size given for the chromosome: {s}
 Please check your chromosome sizes file.
 """
@@ -182,28 +182,15 @@ def BED_to_Linear(path_BED, path_sizes, path_out):
     
     # Get displacements
     displacements = Get_Displacements(path_sizes)
+    if not displacements: return 1
     
     # I/O setup
     f = Table_Reader()
-    f.Set_New_Path(path_in)
+    f.Set_New_Path(path_BED)
     f.Set_Delimiter("\t")
     f.Open()
     f.Close()
     o = open(path_out, "w")
-    
-    # Other setup
-    f.Open()
-    f.Read()
-    first = f.Get()
-    column_count = len(first[3:-1])
-    cc_range = range(column_count)
-    placeholder = column_count * "\t"
-    indexes = range(1, max_index+1)
-    empty_dict = {}
-    for i in indexes: empty_dict[i] = None
-    count_dict = {}
-    for i in indexes: count_dict[i] = 0
-    f.Close()
     
     PRINT.printP(STR__linearize_begin)
     
@@ -263,12 +250,12 @@ def Get_Displacements(path_sizes):
     """
     result = {}
     current_displacement = 0
-    f = open(path_sizes)
+    f = open(path_sizes, "U")
     for line in f:
-        values = f.split("\t")
+        values = line.split("\t")
         if values:
             if values[-1][-1] == "\n":
-                values[-1] = values[:-1]
+                values[-1] = values[-1][:-1]
             chr_ = values[0]
             try:
                 size_str = values[1]
