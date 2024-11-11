@@ -1,6 +1,6 @@
 HELP_DOC = """
 BED TO LINEAR COORDINATES
-(version 1.0)
+(version 2.0)
 by Angelo Chan
 
 This is a program for converting genomic coordinates (chromosome name, start
@@ -21,15 +21,19 @@ The following coordinates:
     chr3    9000    9004
 
 ... will produce:
-    4000    4002    4001
-    5000    5004    5002
-    7000    7006    7003
-    8000    8008    8004
-    11000   11002   11001
-    12000   12004   12002
+    1   4000    4002    4001
+    1   5000    5004    5002
+    2   7000    7006    7003
+    2   8000    8008    8004
+    1   11000   11002   11001
+    1   12000   12004   12002
 
 The original coordinates have been increased by the size of the "previous"
 chromosomes, and an adjusted midpoint coordinate will also be produced.
+
+A new column is also created which alternates between 1 and 2 in accordance with
+the chromosome, so that no two "adjacent" chromosomes will have the same
+alternator number.
 
 The newly created columns will be inserted to the right of all existing columns.
 
@@ -41,7 +45,7 @@ should eventually be graphed in subsequent analyses, from left to right.
 USAGE:
     
     python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
-            [-o <output_path>]
+            [-o <output_path>] [-a <alternating_numbers>]
 
 
 
@@ -64,6 +68,18 @@ OPTIONAL:
         (DEFAULT path generation available)
         
         The filepath of the output file.
+    
+    alternating_numbers
+        
+        (DEFAULT: 0,1)
+        
+        2 or more comma-separated numbers which will be assigned, alternatingly
+        to "adjacent" chromosomes such that no 2 adjacent chromsomes will have
+        the same number.
+        
+        The intended use of these numbers is for designating different GEOM
+        shapes when the data is graphed using GGPLOT2 in R. Therefore, they
+        should be integers between 0 and 25, inclusive.
 
 
 
@@ -72,12 +88,12 @@ EXAMPLES:
     python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
 
     python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
-            -o path\data_graphable.bed
+            -o path\data_graphable.bed -a 15,16,17,18
 
 USAGE:
     
     python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
-            [-o <output_path>]
+            [-o <output_path>] [-a <alternating_numbers>]
 """
 
 NAME = "BED_to_Linear_Coordinates.py"
@@ -100,6 +116,13 @@ PRINT_METRICS = True
 # Minor Configurations #########################################################
 
 FILEMOD = "__LINEARIZED"
+
+
+
+# Defaults #####################################################################
+"NOTE: altering these will not alter the values displayed in the HELP DOC"
+
+DEFAULT__alt_nums = [0,1]
 
 
 
@@ -134,6 +157,11 @@ ERROR: Invalid data in your BED file:
     {s}
 """
 
+STR__invalid_alt_nums = """
+ERROR: Invalid alternating numbers:
+    {s}
+Please specify at least 2integers, separated by commas.
+"""
 
 
 STR__metrics = "Rows in file: {N}"
@@ -156,9 +184,10 @@ PRINT.PRINT_METRICS = PRINT_METRICS
 
 # Functions ####################################################################
 
-def BED_to_Linear(path_BED, path_sizes, path_out):
+def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
     """
-    Generate a series of FASTA files each containing a synthetic chromosome.
+    Create a new set of values which would allow genomic coordinate data to be
+    plotted linearly.
     
     @path_in
             (str - filepath)
@@ -171,18 +200,24 @@ def BED_to_Linear(path_BED, path_sizes, path_out):
     @path_out
             (str - filepath)
             The filepath of the output file.
+    @alt_numbers
+            (list<int>)
+            2 or more comma-separated numbers which will be assigned,
+            alternatingly to "adjacent" chromosomes such that no 2 adjacent
+            chromsomes will have the same number.
     
     Return a value of 0 if the function runs successfully.
     Return a value of 1 if there is a problem.
     
-    BED_to_Linear(str, str, str) -> int
+    BED_to_Linear(str, str, str, list<int>) -> int
     """
     # Setup reporting
     row_count = 0
     
     # Get displacements
-    displacements = Get_Displacements(path_sizes)
-    if not displacements: return 1
+    processed = Process_Path_Sizes(path_sizes, alt_numbers)
+    if not processed: return 1
+    displacements, chr_nums = processed
     
     # I/O setup
     f = Table_Reader()
@@ -221,11 +256,14 @@ def BED_to_Linear(path_BED, path_sizes, path_out):
         os_start = start + offset
         os_end = end + offset
         os_mid = mid + offset
+        alt_chr = chr_nums[chr_]
         # String
         os_start = str(os_start)
         os_end = str(os_end)
         os_mid = str(os_mid)
-        sb = raw + "\t" + os_start + "\t" + os_end + "\t" + os_mid + "\n"
+        alt_chr = str(alt_chr)
+        sb = (raw + "\t" + alt_chr + "\t" + os_start + "\t" + os_end + "\t" +
+                os_mid + "\n")
         # Write
         o.write(sb)
     
@@ -240,16 +278,22 @@ def BED_to_Linear(path_BED, path_sizes, path_out):
     # Wrap up
     return 0
 
-def Get_Displacements(path_sizes):
+def Process_Path_Sizes(path_sizes, alt_numbers):
     """
-    Return a dictionary with the "displacement" values for each chromosome.
+    Return a dictionary with the "displacement" values for each chromosome, and
+    a dictionary with the "alternating number" for each chromosome.
     
-    Return an empty dictionary if there are any problems.
+    Return an empty list if there are any problems.
     
-    Get_Displacements(str) -> dict<str:int>
+    Get_Displacements(str, list<int>) -> []
+    Get_Displacements(str, list<int>) -> [dict<str:int>, dict<str:int>]
     """
-    result = {}
+    # Setup
+    displacement = {}
+    assigned_nums = {}
+    numbers = list(alt_numbers)
     current_displacement = 0
+    # Process
     f = open(path_sizes, "U")
     for line in f:
         values = line.split("\t")
@@ -261,15 +305,19 @@ def Get_Displacements(path_sizes):
                 size_str = values[1]
             except:
                 PRINT.printE(STR__no_size_str.format(s = chr_))
-                return {}
+                return []
             try:
                 size = int(size_str)
             except:
                 PRINT.printE(STR__invalid_size_str.format(s = size_str))
-                return {}
-            result[chr_] = current_displacement
+                return []
+            # Update
+            current_no = numbers.pop(0)
+            assigned_nums[chr_] = current_no
+            numbers.append(current_no) # Essentially rotate to the end
+            displacement[chr_] = current_displacement
             current_displacement += size
-    return result
+    return [displacement, assigned_nums]
 
 
 
@@ -318,13 +366,14 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
     # Set up rest of the parsing
     path_out = Generate_Default_Output_File_Path_From_File(path_BED, FILEMOD,
             True)
+    alt_nums = DEFAULT__alt_nums
     
     # Validate optional inputs (except output path)
     while inputs:
         arg = inputs.pop(0)
         flag = 0
         try: # Following arguments
-            if arg in ["-o"]:
+            if arg in ["-o", "-a"]:
                 arg2 = inputs.pop(0)
             else: # Invalid
                 arg = Strip_X(arg)
@@ -337,6 +386,12 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
             return 1
         if arg == "-o":
             path_out = arg2
+        else: # arg == "-a"
+            alt_nums = Validate_List_Of_Ints_NonNeg(arg2, ",")
+            if len(alt_nums) < 2:
+                PRINT.printE(STR__invalid_alt_nums.format(s = arg2))
+                PRINT.printE(STR__use_help)
+                return 1
     
     # Validate output paths
     valid_out = Validate_Write_Path(path_out)
@@ -349,7 +404,7 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
         return 1
     
     # Run program
-    exit_state = BED_to_Linear(path_BED, path_sizes, path_out)
+    exit_state = BED_to_Linear(path_BED, path_sizes, path_out, alt_nums)
     
     # Exit
     if exit_state == 0: return 0
