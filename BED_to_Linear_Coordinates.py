@@ -196,7 +196,7 @@ def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
             (str - filepath)
             The filepath of the chromosome sizes file. This is a TSV file with
             the names of the chromosomes in the first column, and their
-            corresponding sizes in the second column. 
+            corresponding sizes in the second column.
     @path_out
             (str - filepath)
             The filepath of the output file.
