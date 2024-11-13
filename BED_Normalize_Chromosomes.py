@@ -285,8 +285,8 @@ def BED_Normalize_Chr(path_BED, path_sizes, path_out, target_type, target):
         sc_end = str(sc_end)
         sc_mid = str(sc_mid)
         size = str(size)
-        sb = (raw + "\t" + sc_start + "\t" + sc_end + "\t" + sc_mid + "\t" +
-                size + "\n")
+        sb = (raw + "\t" + chr_ + "\t" + sc_start + "\t" + sc_end + "\t" +
+                sc_mid + "\t" + size + "\n")
         # Write
         o.write(sb)
     
@@ -415,7 +415,7 @@ def Parse_Command_Line_Input__BED_Normalize_Chr(raw_command_line_input):
     path_BED = inputs.pop(0)
     valid = Validate_Read_Path(path_BED)
     if valid == 1:
-        PRINT.printE(STR__IO_error_read.format(f = path_in))
+        PRINT.printE(STR__IO_error_read.format(f = path_BED))
         PRINT.printE(STR__use_help)
         return 1
     path_sizes = inputs.pop(0)
