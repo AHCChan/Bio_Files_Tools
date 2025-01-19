@@ -44,7 +44,7 @@ should eventually be graphed in subsequent analyses, from left to right.
 
 USAGE:
     
-    python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
+    python27 BED_to_Linear_Coordinates.py <input_BED> <chr_sizes_file>
             [-o <output_path>] [-a <alternating_numbers>] [-g <gap>]
 
 
@@ -92,17 +92,17 @@ OPTIONAL:
 
 EXAMPLES:
     
-    python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
+    python27 BED_to_Linear_Coordinates.py path\data.bed path\sizes.tsv
 
-    python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
+    python27 BED_to_Linear_Coordinates.py path\data.bed path\sizes.tsv
             -o path\data_graphable.bed -a 15,16,17,18
 
-    python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
+    python27 BED_to_Linear_Coordinates.py path\data.bed path\sizes.tsv
             -o path\data_graphable.bed -g 5000000
 
 USAGE:
     
-    python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
+    python27 BED_to_Linear_Coordinates.py <input_BED> <chr_sizes_file>
             [-o <output_path>] [-a <alternating_numbers>] [-g <gap>]
 """
 
