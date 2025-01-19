@@ -1,6 +1,6 @@
 HELP_DOC = """
 BED TO LINEAR COORDINATES
-(version 2.0)
+(version 3.0)
 by Angelo Chan
 
 This is a program for converting genomic coordinates (chromosome name, start
@@ -45,7 +45,7 @@ should eventually be graphed in subsequent analyses, from left to right.
 USAGE:
     
     python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
-            [-o <output_path>] [-a <alternating_numbers>]
+            [-o <output_path>] [-a <alternating_numbers>] [-g <gap>]
 
 
 
@@ -80,6 +80,13 @@ OPTIONAL:
         The intended use of these numbers is for designating different GEOM
         shapes when the data is graphed using GGPLOT2 in R. Therefore, they
         should be integers between 0 and 25, inclusive.
+    
+    gap
+
+        (DEFAULT: 0)
+        
+        The gap between chromosomes. Having a gap allows chromosomes to be
+        separated from each other when plotted.
 
 
 
@@ -90,10 +97,13 @@ EXAMPLES:
     python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
             -o path\data_graphable.bed -a 15,16,17,18
 
+    python27 BED_to_Linear_Coordinates path\data.bed path\sizes.tsv
+            -o path\data_graphable.bed -g 5000000
+
 USAGE:
     
     python27 BED_to_Linear_Coordinates <input_BED> <chr_sizes_file>
-            [-o <output_path>] [-a <alternating_numbers>]
+            [-o <output_path>] [-a <alternating_numbers>] [-g <gap>]
 """
 
 NAME = "BED_to_Linear_Coordinates.py"
@@ -123,6 +133,7 @@ FILEMOD = "__LINEARIZED"
 "NOTE: altering these will not alter the values displayed in the HELP DOC"
 
 DEFAULT__alt_nums = [0,1]
+DEFAULT__gap = 0
 
 
 
@@ -160,9 +171,14 @@ ERROR: Invalid data in your BED file:
 STR__invalid_alt_nums = """
 ERROR: Invalid alternating numbers:
     {s}
-Please specify at least 2integers, separated by commas.
+Please specify at least 2 integers, separated by commas.
 """
 
+STR__invalid_gap = """
+ERROR: Invalid gap:
+    {s}
+Please specify a non-negative integer.
+"""
 
 STR__metrics = "Rows in file: {N}"
 
@@ -184,7 +200,7 @@ PRINT.PRINT_METRICS = PRINT_METRICS
 
 # Functions ####################################################################
 
-def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
+def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers, gap):
     """
     Create a new set of values which would allow genomic coordinate data to be
     plotted linearly.
@@ -205,6 +221,9 @@ def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
             2 or more comma-separated numbers which will be assigned,
             alternatingly to "adjacent" chromosomes such that no 2 adjacent
             chromsomes will have the same number.
+    @gap
+            (int)
+            The gap between chromosomes.
     
     Return a value of 0 if the function runs successfully.
     Return a value of 1 if there is a problem.
@@ -215,7 +234,7 @@ def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
     row_count = 0
     
     # Get displacements
-    processed = Process_Path_Sizes(path_sizes, alt_numbers)
+    processed = Process_Path_Sizes(path_sizes, alt_numbers, gap)
     if not processed: return 1
     displacements, chr_nums = processed
     
@@ -278,7 +297,7 @@ def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers):
     # Wrap up
     return 0
 
-def Process_Path_Sizes(path_sizes, alt_numbers):
+def Process_Path_Sizes(path_sizes, alt_numbers, gap):
     """
     Return a dictionary with the "displacement" values for each chromosome, and
     a dictionary with the "alternating number" for each chromosome.
@@ -317,6 +336,7 @@ def Process_Path_Sizes(path_sizes, alt_numbers):
             numbers.append(current_no) # Essentially rotate to the end
             displacement[chr_] = current_displacement
             current_displacement += size
+            current_displacement += gap
     return [displacement, assigned_nums]
 
 
@@ -367,13 +387,14 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
     path_out = Generate_Default_Output_File_Path_From_File(path_BED, FILEMOD,
             True)
     alt_nums = DEFAULT__alt_nums
+    gap = DEFAULT__gap
     
     # Validate optional inputs (except output path)
     while inputs:
         arg = inputs.pop(0)
         flag = 0
         try: # Following arguments
-            if arg in ["-o", "-a"]:
+            if arg in ["-o", "-a", "-g"]:
                 arg2 = inputs.pop(0)
             else: # Invalid
                 arg = Strip_X(arg)
@@ -386,10 +407,16 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
             return 1
         if arg == "-o":
             path_out = arg2
-        else: # arg == "-a"
+        elif arg == "-a":
             alt_nums = Validate_List_Of_Ints_NonNeg(arg2, ",")
             if len(alt_nums) < 2:
                 PRINT.printE(STR__invalid_alt_nums.format(s = arg2))
+                PRINT.printE(STR__use_help)
+                return 1
+        else: # arg == "-g"
+            gap = Validate_Int_NonNeg(arg2)
+            if gap == -1:
+                PRINT.printE(STR__invalid_gap.format(s = arg2))
                 PRINT.printE(STR__use_help)
                 return 1
     
@@ -404,7 +431,7 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
         return 1
     
     # Run program
-    exit_state = BED_to_Linear(path_BED, path_sizes, path_out, alt_nums)
+    exit_state = BED_to_Linear(path_BED, path_sizes, path_out, alt_nums, gap)
     
     # Exit
     if exit_state == 0: return 0
