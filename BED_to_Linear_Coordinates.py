@@ -1,6 +1,6 @@
 HELP_DOC = """
 BED TO LINEAR COORDINATES
-(version 3.0)
+(version 3.1)
 by Angelo Chan
 
 This is a program for converting genomic coordinates (chromosome name, start
@@ -373,13 +373,13 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
     path_BED = inputs.pop(0)
     valid = Validate_Read_Path(path_BED)
     if valid == 1:
-        PRINT.printE(STR__IO_error_read.format(f = path_in))
+        PRINT.printE(STR__IO_error_read.format(f = path_BED))
         PRINT.printE(STR__use_help)
         return 1
     path_sizes = inputs.pop(0)
     valid = Validate_Read_Path(path_sizes)
     if valid == 1:
-        PRINT.printE(STR__IO_error_read.format(f = path_in))
+        PRINT.printE(STR__IO_error_read.format(f = path_sizes))
         PRINT.printE(STR__use_help)
         return 1
     
