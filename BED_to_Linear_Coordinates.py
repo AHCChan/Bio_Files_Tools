@@ -270,7 +270,7 @@ def BED_to_Linear(path_BED, path_sizes, path_out, alt_numbers, gap):
             return 1
         # Process
         difference = end - start
-        mid = start + difference
+        mid = start + difference/2
         offset = displacements[chr_]
         os_start = start + offset
         os_end = end + offset
