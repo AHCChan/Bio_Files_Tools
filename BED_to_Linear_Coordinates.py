@@ -1,6 +1,6 @@
 HELP_DOC = """
 BED TO LINEAR COORDINATES
-(version 3.2)
+(version 3.2.1)
 by Angelo Chan
 
 This is a program for converting genomic coordinates (chromosome name, start
@@ -156,6 +156,10 @@ STR__use_help = "\nUse the -h option for help:\n\t python "\
 STR__no_size_str = """
 ERROR: No size given for the chromosome: {s}
 Please check your chromosome sizes file.
+"""
+
+STR__chr_size_error_read = """
+ERROR: Chromosome sizes file does not exist or could not be opened.
 """
 
 STR__invalid_size_str = """
@@ -379,7 +383,7 @@ def Parse_Command_Line_Input__BED_to_Linear(raw_command_line_input):
     path_sizes = inputs.pop(0)
     valid = Validate_Read_Path(path_sizes)
     if valid == 1:
-        PRINT.printE(STR__IO_error_read.format(f = path_sizes))
+        PRINT.printE(STR__chr_size_error_read.format(f = path_sizes))
         PRINT.printE(STR__use_help)
         return 1
     
